@@ -1447,10 +1447,10 @@ const struct mips_opcode mips_builtin_opcodes[] =
 {"cexeq",  "t,+b,+v",	0x49c00006, 0xffe0003f, 0,			0, I1},
 {"cnexeq", "t,+b,+v",	0x49c00007, 0xffe0003f, 0,			0, I1},
 
-{"cscb",  "t,m,+b",     0x4a000000, 0xffe0003f, 0,          0, I1},
-{"csch",  "t,m,+b",     0x4a000001, 0xffe0003f, 0,          0, I1},
-{"cscw",  "t,m,+b",     0x4a000002, 0xffe0003f, 0,          0, I1},
-{"cscd",  "t,m,+b",     0x4a000003, 0xffe0003f, 0,          0, I1},
+{"cscb",  "m,t,+b",     0x4a000000, 0xffe0003f, 0,          0, I1},
+{"csch",  "m,t,+b",     0x4a000001, 0xffe0003f, 0,          0, I1},
+{"cscw",  "m,t,+b",     0x4a000002, 0xffe0003f, 0,          0, I1},
+{"cscd",  "m,t,+b",     0x4a000003, 0xffe0003f, 0,          0, I1},
 {"cscc",  "m,+w,+b",    0x4a000007, 0xffe0003f, 0,          0, I1},
 
 {"cllb",  "t,+b",       0x4a000008, 0xffe007ff, 0,          0, I1},
