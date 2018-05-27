@@ -1664,7 +1664,9 @@ void helper_mttc0_cause(CPUMIPSState *env, target_ulong arg1)
     int other_tc = env->CP0_VPEControl & (0xff << CP0VPECo_TargTC);
     CPUMIPSState *other = mips_cpu_map_tc(env, &other_tc);
 
+    qemu_mutex_lock_iothread();
     cpu_mips_store_cause(other, arg1);
+    qemu_mutex_unlock_iothread();
 }
 
 target_ulong helper_mftc0_epc(CPUMIPSState *env)
