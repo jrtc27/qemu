@@ -51,11 +51,13 @@ static void cpu_mips_irq_request(void *opaque, int irq, int level)
         }
     }
 
+    qemu_mutex_lock_iothread();
     if (env->CP0_Cause & CP0Ca_IP_mask) {
         cpu_interrupt(cs, CPU_INTERRUPT_HARD);
     } else {
         cpu_reset_interrupt(cs, CPU_INTERRUPT_HARD);
     }
+    qemu_mutex_unlock_iothread();
 }
 
 void cpu_mips_irq_init_cpu(MIPSCPU *cpu)
