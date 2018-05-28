@@ -627,6 +627,8 @@ void helper_sdm(CPUMIPSState *env, target_ulong addr, target_ulong reglist,
 }
 #endif
 
+bool enable_sleep = true;
+
 #ifndef CONFIG_USER_ONLY
 /* SMP helpers.  */
 static bool mips_vpe_is_wfi(MIPSCPU *c)
@@ -661,7 +663,8 @@ static inline void mips_vpe_sleep(MIPSCPU *cpu)
 
     /* The VPE was shut off, really go to bed.
        Reset any old _WAKE requests.  */
-    cs->halted = 1;
+    if (enable_sleep)
+        cs->halted = 1;
     cpu_reset_interrupt(cs, CPU_INTERRUPT_WAKE);
 }
 
@@ -6051,11 +6054,13 @@ void helper_wait(CPUMIPSState *env)
 {
     CPUState *cs = CPU(mips_env_get_cpu(env));
 
-    cs->halted = 1;
+    if (enable_sleep)
+        cs->halted = 1;
     cpu_reset_interrupt(cs, CPU_INTERRUPT_WAKE);
     /* Last instruction in the block, PC was updated before
        - no need to recover PC and icount */
-    raise_exception(env, EXCP_HLT);
+    if (enable_sleep)
+        raise_exception(env, EXCP_HLT);
 }
 
 #if !defined(CONFIG_USER_ONLY)

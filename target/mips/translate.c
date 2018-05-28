@@ -5005,6 +5005,8 @@ static void gen_arith_imm(DisasContext *ctx, uint32_t opc,
     tcg_temp_free_i64(tpc); \
 }
 
+extern bool enable_sleep;
+
 /* Logic with immediate operand */
 static void gen_logic_imm(DisasContext *ctx, uint32_t opc,
                           int rt, int rs, int16_t imm)
@@ -5034,6 +5036,21 @@ static void gen_logic_imm(DisasContext *ctx, uint32_t opc,
             if ((uint16_t)imm == 0xface)
                 GEN_CHERI_TRACE_HELPER(cpu_env, cheri_debug_message);
 
+            if ((uint16_t)imm == 0xc0fe) {
+                CPUState *other_cs = first_cpu;
+                enable_sleep = false;
+
+                qemu_mutex_lock_iothread();
+                CPU_FOREACH(other_cs) {
+                    MIPSCPU *cpu = MIPS_CPU(other_cs);
+                    if (other_cs->env->halted)
+                        cpu_interrupt(CPU(c), CPU_INTERRUPT_WAKE);
+                }
+                qemu_mutex_unlock_iothread();
+            }
+
+            if ((uint16_t)imm == 0xdcaf)
+                enable_sleep = true;
         }
 #endif /* TARGET_CHERI */
         return;
