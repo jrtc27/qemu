@@ -5043,9 +5043,9 @@ static void gen_logic_imm(DisasContext *ctx, uint32_t opc,
 
                 qemu_mutex_lock_iothread();
                 CPU_FOREACH(other_cs) {
-                    MIPSCPU *cpu = MIPS_CPU(other_cs);
-                    if (cpu->env->halted)
-                        cpu_interrupt(CPU(cpu), CPU_INTERRUPT_WAKE);
+                    MIPSCPU *other_cpu = MIPS_CPU(other_cs);
+                    if (other_cs->halted)
+                        cpu_interrupt(CPU(other_cpu), CPU_INTERRUPT_WAKE);
                 }
                 qemu_mutex_unlock_iothread();
             }
