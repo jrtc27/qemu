@@ -1324,6 +1324,19 @@ static inline ram_addr_t v2r_addr(CPUMIPSState *env, target_ulong vaddr, int rw,
     return p2r_addr(env, v2p_addr(env, vaddr, rw, reg));
 }
 
+static inline void cheri_linkedflag_invalidate(ram_addr_t ram_addr)
+{
+    CPUState *other_cs = first_cpu;
+
+    CPU_FOREACH(other_cs) {
+        MIPSCPU *other_cpu = MIPS_CPU(other_cs);
+        CPUMIPSState *other_env = &other_cpu->env;
+        /* Check RAM address to see if the linkedflag needs to be reset. */
+        if (ram_addr == p2r_addr(other_env, other_env->lladdr))
+            other_env->linkedflag = 0;
+    }
+}
+
 void cheri_tag_invalidate(CPUMIPSState *env, target_ulong vaddr, int32_t size)
 {
     ram_addr_t ram_addr;
@@ -1354,9 +1367,7 @@ void cheri_tag_invalidate(CPUMIPSState *env, target_ulong vaddr, int32_t size)
             tagblk2[CAP_TAGBLK_IDX(tag2)] = 0;
     }
 
-    /* Check RAM address to see if the linkedflag needs to be reset. */
-    if (ram_addr == p2r_addr(env, env->lladdr))
-        env->linkedflag = 0;
+    cheri_linkedflag_invalidate(ram_addr);
 
     return;
 }
@@ -1425,9 +1436,7 @@ void cheri_tag_set(CPUMIPSState *env, target_ulong vaddr, int reg)
     }
     tagblk[CAP_TAGBLK_IDX(tag)] = 1;
 
-    /* Check RAM address to see if the linkedflag needs to be reset. */
-    if (ram_addr == p2r_addr(env, env->lladdr))
-        env->linkedflag = 0;
+    cheri_linkedflag_invalidate(ram_addr);
 
     return;
 }
@@ -1490,10 +1499,7 @@ void cheri_tag_set_m128(CPUMIPSState *env, target_ulong vaddr, int reg,
     tagblk64++;
     *tagblk64 = length;
 
-
-    /* Check RAM address to see if the linkedflag needs to be reset. */
-    if (ram_addr == p2r_addr(env, env->lladdr))
-        env->linkedflag = 0;
+    cheri_linkedflag_invalidate(ram_addr);
 
     return;
 }
