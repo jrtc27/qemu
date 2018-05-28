@@ -22,6 +22,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qemu/main-loop.h"
 #include "cpu.h"
 #include "disas/disas.h"
 #include "exec/exec-all.h"
@@ -5043,8 +5044,8 @@ static void gen_logic_imm(DisasContext *ctx, uint32_t opc,
                 qemu_mutex_lock_iothread();
                 CPU_FOREACH(other_cs) {
                     MIPSCPU *cpu = MIPS_CPU(other_cs);
-                    if (other_cs->env->halted)
-                        cpu_interrupt(CPU(c), CPU_INTERRUPT_WAKE);
+                    if (cpu->env->halted)
+                        cpu_interrupt(CPU(cpu), CPU_INTERRUPT_WAKE);
                 }
                 qemu_mutex_unlock_iothread();
             }
