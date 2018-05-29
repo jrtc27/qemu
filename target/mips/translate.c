@@ -38,6 +38,8 @@
 #include "trace-tcg.h"
 #include "exec/log.h"
 
+#include <time.h>
+
 #define MIPS_DEBUG_DISAS 0
 
 /* MIPS major opcodes */
@@ -5052,6 +5054,13 @@ static void gen_logic_imm(DisasContext *ctx, uint32_t opc,
 
             if ((uint16_t)imm == 0xdcaf)
                 enable_sleep = true;
+
+            if ((uint16_t)imm == 0xc10c) {
+                struct timespec ts;
+                clock_gettime(CLOCK_MONOTONIC, &ts);
+                tcg_gen_movi_tl(cpu_gpr[2], (target_long)ts->tv_sec);
+                tcg_gen_movi_tl(cpu_gpr[3], (target_long)ts->tv_nsec);
+            }
         }
 #endif /* TARGET_CHERI */
         return;
