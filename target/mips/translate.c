@@ -5058,8 +5058,8 @@ static void gen_logic_imm(DisasContext *ctx, uint32_t opc,
             if ((uint16_t)imm == 0xc10c) {
                 struct timespec ts;
                 clock_gettime(CLOCK_MONOTONIC, &ts);
-                tcg_gen_movi_tl(cpu_gpr[2], (target_long)ts->tv_sec);
-                tcg_gen_movi_tl(cpu_gpr[3], (target_long)ts->tv_nsec);
+                tcg_gen_movi_tl(cpu_gpr[2], (target_long)ts.tv_sec);
+                tcg_gen_movi_tl(cpu_gpr[3], (target_long)ts.tv_nsec);
             }
         }
 #endif /* TARGET_CHERI */
