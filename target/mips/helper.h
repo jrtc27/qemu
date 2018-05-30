@@ -167,6 +167,7 @@ DEF_HELPER_1(mfc0_coreid, tl, env)
 
 DEF_HELPER_4(dump_load, void, env, int, tl, tl)
 DEF_HELPER_4(dump_load32, void, env, int, tl, i32)
+DEF_HELPER_1(clock_gettime, void, env)
 
 DEF_HELPER_2(mtc0_dumpstate, void, env, tl)
 DEF_HELPER_2(mtc2_dumpcstate, void, env, tl)

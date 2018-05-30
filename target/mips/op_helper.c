@@ -6742,6 +6742,14 @@ void helper_dump_load32(CPUMIPSState *env, int opc, target_ulong addr,
 
     helper_dump_load(env, opc, addr, (target_ulong)value);
 }
+
+void helper_clock_gettime(CPUMIPSState *env)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    env->active_tc->gpr[2] = (target_long)ts.tv_sec;
+    env->active_tc->gpr[3] = (target_long)ts.tv_nsec;
+}
 #endif /* TARGET_CHERI */
 
 /* Complex FPU operations which may need stack space. */
