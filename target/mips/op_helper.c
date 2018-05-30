@@ -6747,8 +6747,8 @@ void helper_clock_gettime(CPUMIPSState *env)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    env->active_tc->gpr[2] = (target_long)ts.tv_sec;
-    env->active_tc->gpr[3] = (target_long)ts.tv_nsec;
+    env->active_tc.gpr[2] = (target_long)ts.tv_sec;
+    env->active_tc.gpr[3] = (target_long)ts.tv_nsec;
 }
 #endif /* TARGET_CHERI */
 
