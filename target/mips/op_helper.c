@@ -4722,8 +4722,11 @@ static inline void dump_cap_load_cbl(uint64_t cursor, uint64_t base,
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
-        fprintf(qemu_logfile, "    c:" TARGET_FMT_lx " b:" TARGET_FMT_lx " l:"
-                TARGET_FMT_lx "\n", cursor, base, length);
+        if (trace_stats_only)
+            ++trace_loads;
+        else
+            fprintf(qemu_logfile, "    c:" TARGET_FMT_lx " b:" TARGET_FMT_lx " l:"
+                    TARGET_FMT_lx "\n", cursor, base, length);
     }
 }
 
@@ -4944,6 +4947,7 @@ static inline void log_instruction(CPUMIPSState *env, target_ulong pc, int isa)
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
         if (trace_stats_only) {
             ++trace_instructions;
+            return;
         }
         MIPSCPU *cpu = mips_env_get_cpu(env);
         CPUState *cs = CPU(cpu);
