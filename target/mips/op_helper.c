@@ -4943,7 +4943,7 @@ static inline void log_instruction(CPUMIPSState *env, target_ulong pc, int isa)
 {
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
         if (trace_stats_only) {
-            ++trace_instructions
+            ++trace_instructions;
         }
         MIPSCPU *cpu = mips_env_get_cpu(env);
         CPUState *cs = CPU(cpu);
