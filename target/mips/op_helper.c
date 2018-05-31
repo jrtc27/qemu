@@ -6564,12 +6564,12 @@ void mips_dump_changed_state(CPUMIPSState *env)
         qemu_log_mask(CPU_LOG_INSTR, "--- %s\n", new_mode);
     }
 
-    if (qemu_loglevel_mask(CPU_LOG_INSTR | CPU_LOG_CVTRACE)) {
+    if (qemu_loglevel_mask(CPU_LOG_INSTR | CPU_LOG_CVTRACE) && !trace_stats_only) {
         /* Print changed state: GPR, Cap. */
         dump_changed_regs(env);
     }
 
-    if (qemu_loglevel_mask(CPU_LOG_INSTR)) {
+    if (qemu_loglevel_mask(CPU_LOG_INSTR) && !trace_stats_only) {
         /* Print change state: HI/LO COP0 (not included in CVTRACE) */
         dump_changed_cop0(env);
     }
