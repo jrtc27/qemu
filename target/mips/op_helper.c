@@ -4721,12 +4721,9 @@ static inline void dump_cap_load_cbl(uint64_t cursor, uint64_t base,
         uint64_t length)
 {
 
-    if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
-        if (trace_stats_only)
-            ++trace_loads;
-        else
-            fprintf(qemu_logfile, "    c:" TARGET_FMT_lx " b:" TARGET_FMT_lx " l:"
-                    TARGET_FMT_lx "\n", cursor, base, length);
+    if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR) && !trace_stats_only)) {
+        fprintf(qemu_logfile, "    c:" TARGET_FMT_lx " b:" TARGET_FMT_lx " l:"
+                TARGET_FMT_lx "\n", cursor, base, length);
     }
 }
 
