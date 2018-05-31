@@ -26,6 +26,8 @@
 #include "qemu/cutils.h"
 #include "trace/control.h"
 
+bool trace_stats_only = false;
+
 static char *logfilename;
 FILE *qemu_logfile;
 int qemu_loglevel;
@@ -36,7 +38,7 @@ static GArray *debug_regions;
 int qemu_log(const char *fmt, ...)
 {
     int ret = 0;
-    if (qemu_logfile) {
+    if (qemu_logfile && !trace_stats_only) {
         va_list ap;
         va_start(ap, fmt);
         ret = vfprintf(qemu_logfile, fmt, ap);

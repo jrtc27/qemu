@@ -4179,6 +4179,39 @@ extern int cl_default_trace_format;
 #define user_trace_dbg(...)
 #endif
 
+extern bool trace_stats_only;
+uint64_t trace_context_switches;
+uint64_t trace_tlb_misses;
+uint64_t trace_loads;
+uint64_t trace_stores;
+uint64_t trace_instructions;
+
+void helper_stats_start(CPUMIPSState *env, target_ulong pc)
+{
+    trace_stats_only = true;
+    trace_context_switches = 0;
+    trace_tlb_misses = 0;
+    trace_loads = 0;
+    trace_stores = 0;
+    trace_instructions = 0;
+}
+
+void helper_stats_stop(CPUMIPSState *env, target_ulong pc)
+{
+    trace_stats_only = false;
+    env->active_tc.gpr[4] = (target_long)trace_context_switches;
+    env->active_tc.gpr[5] = (target_long)trace_tlb_misses;
+    env->active_tc.gpr[6] = (target_long)trace_loads;
+    env->active_tc.gpr[7] = (target_long)trace_stores;
+    env->active_tc.gpr[8] = (target_long)trace_instructions;
+}
+
+void helper_stats_context_switch(CPUMIPSState *env, target_ulong pc)
+{
+    if (trace_stats_only)
+        ++trace_context_switches;
+}
+
 /* Start instruction trace logging. */
 void helper_instr_start(CPUMIPSState *env, target_ulong pc)
 {
@@ -4298,6 +4331,7 @@ static void do_hexdump(FILE* f, uint8_t* buffer, target_ulong length, target_ulo
 void helper_cheri_debug_message(struct CPUMIPSState* env, uint64_t pc)
 {
     uint32_t mode = qemu_loglevel & (CPU_LOG_CVTRACE | CPU_LOG_INSTR);
+    if (trace_stats_only) return;
     if (!mode && env->tracing_suspended) {
         /* Always print these messages even if user-space only tracing is on */
         mode = cl_default_trace_format;
@@ -4422,9 +4456,12 @@ static inline void dump_cap_load(uint64_t addr, uint64_t pesbt,
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
-        fprintf(qemu_logfile, "    Cap Memory Read [" TARGET_FMT_lx
-                "] = v:%d PESBT:" TARGET_FMT_lx " Cursor:" TARGET_FMT_lx "\n",
-                addr, tag, pesbt, cursor);
+        if (trace_stats_only)
+            ++trace_loads;
+        else
+            fprintf(qemu_logfile, "    Cap Memory Read [" TARGET_FMT_lx
+                    "] = v:%d PESBT:" TARGET_FMT_lx " Cursor:" TARGET_FMT_lx "\n",
+                    addr, tag, pesbt, cursor);
     }
 }
 
@@ -4436,9 +4473,12 @@ static inline void dump_cap_store(uint64_t addr, uint64_t pesbt,
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
-        fprintf(qemu_logfile, "    Cap Memory Write [" TARGET_FMT_lx
-                "] = v:%d PESBT:" TARGET_FMT_lx " Cursor:" TARGET_FMT_lx "\n",
-                addr, tag, pesbt, cursor);
+        if (trace_stats_only)
+            ++trace_stores;
+        else
+            fprintf(qemu_logfile, "    Cap Memory Write [" TARGET_FMT_lx
+                    "] = v:%d PESBT:" TARGET_FMT_lx " Cursor:" TARGET_FMT_lx "\n",
+                    addr, tag, pesbt, cursor);
     }
 }
 
@@ -4540,8 +4580,11 @@ static inline void dump_cap_load(uint64_t addr, uint64_t cursor,
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
-       fprintf(qemu_logfile, "    Cap Memory Read [" TARGET_FMT_lx "] = v:%d c:"
-               TARGET_FMT_lx " b:" TARGET_FMT_lx "\n", addr, tag, cursor, base);
+        if (trace_stats_only)
+            ++trace_loads;
+        else
+            fprintf(qemu_logfile, "    Cap Memory Read [" TARGET_FMT_lx "] = v:%d c:"
+                    TARGET_FMT_lx " b:" TARGET_FMT_lx "\n", addr, tag, cursor, base);
     }
 }
 
@@ -4553,8 +4596,11 @@ static inline void dump_cap_store(uint64_t addr, uint64_t cursor,
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
-      fprintf(qemu_logfile, "    Cap Memory Write [" TARGET_FMT_lx "] = v:%d c:"
-              TARGET_FMT_lx " b:" TARGET_FMT_lx "\n", addr, tag, cursor, base);
+        if (trace_stats_only)
+            ++trace_stores;
+        else
+            fprintf(qemu_logfile, "    Cap Memory Write [" TARGET_FMT_lx "] = v:%d c:"
+                    TARGET_FMT_lx " b:" TARGET_FMT_lx "\n", addr, tag, cursor, base);
     }
 }
 
@@ -4663,8 +4709,11 @@ static inline void dump_cap_load_op(uint64_t addr, uint64_t perm_type,
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
-        fprintf(qemu_logfile, "    Cap Memory Read [" TARGET_FMT_lx
-             "] = v:%d tps:" TARGET_FMT_lx "\n", addr, tag, perm_type);
+        if (trace_stats_only)
+            ++trace_loads;
+        else
+            fprintf(qemu_logfile, "    Cap Memory Read [" TARGET_FMT_lx
+                 "] = v:%d tps:" TARGET_FMT_lx "\n", addr, tag, perm_type);
     }
 }
 
@@ -4686,8 +4735,11 @@ static inline void dump_cap_store_op(uint64_t addr, uint64_t perm_type,
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
-        fprintf(qemu_logfile, "    Cap Memory Write [" TARGET_FMT_lx
-                "] = v:%d tps:" TARGET_FMT_lx "\n", addr, tag, perm_type);
+        if (trace_stats_only)
+            ++trace_stores;
+        else
+            fprintf(qemu_logfile, "    Cap Memory Write [" TARGET_FMT_lx
+                    "] = v:%d tps:" TARGET_FMT_lx "\n", addr, tag, perm_type);
     }
 }
 
@@ -4695,6 +4747,7 @@ static inline void dump_cap_store_cursor(uint64_t cursor)
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
+        if (trace_stats_only) return;
         fprintf(qemu_logfile, "    c:" TARGET_FMT_lx, cursor);
     }
 }
@@ -4703,6 +4756,7 @@ static inline void dump_cap_store_base(uint64_t base)
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
+        if (trace_stats_only) return;
         fprintf(qemu_logfile, " b:" TARGET_FMT_lx, base);
     }
 }
@@ -4711,6 +4765,7 @@ static inline void dump_cap_store_length(uint64_t length)
 {
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
+        if (trace_stats_only) return;
         fprintf(qemu_logfile, " l:" TARGET_FMT_lx "\n", length);
     }
 }
@@ -4887,6 +4942,9 @@ target_ulong helper_cap2bytes_length(CPUMIPSState *env, uint32_t cs)
 static inline void log_instruction(CPUMIPSState *env, target_ulong pc, int isa)
 {
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
+        if (trace_stats_only) {
+            ++trace_instructions
+        }
         MIPSCPU *cpu = mips_env_get_cpu(env);
         CPUState *cs = CPU(cpu);
 
@@ -4972,8 +5030,10 @@ void helper_log_registers(CPUMIPSState *env)
 {
     /* Print changed state: GPR, HI/LO, COP0. */
     if (unlikely(qemu_loglevel_mask(CPU_LOG_CVTRACE | CPU_LOG_INSTR) ||
-        env->user_only_tracing_enabled))
-        mips_dump_changed_state(env);
+        env->user_only_tracing_enabled)) {
+        if (!trace_stats_only)
+            mips_dump_changed_state(env);
+    }
 }
 
 void helper_ccheck_pc(CPUMIPSState *env, uint64_t pc, int isa)
@@ -5678,7 +5738,7 @@ void r4k_helper_tlbwi(CPUMIPSState *env)
     r4k_invalidate_tlb(env, idx, 0);
     r4k_fill_tlb(env, idx);
 #ifdef TARGET_CHERI
-    if (qemu_loglevel_mask(CPU_LOG_INSTR))
+    if (qemu_loglevel_mask(CPU_LOG_INSTR) && !trace_stats_only)
         r4k_dump_tlb(env, idx);
 #endif /* TARGET_CHERI */
 }
@@ -5690,7 +5750,7 @@ void r4k_helper_tlbwr(CPUMIPSState *env)
     r4k_invalidate_tlb(env, r, 1);
     r4k_fill_tlb(env, r);
 #ifdef TARGET_CHERI
-    if (qemu_loglevel_mask(CPU_LOG_INSTR))
+    if (qemu_loglevel_mask(CPU_LOG_INSTR) && !trace_stats_only)
         r4k_dump_tlb(env, r);
 #endif /* TARGET_CHERI */
 }
@@ -5898,7 +5958,7 @@ static inline void exception_return(CPUMIPSState *env)
     debug_pre_eret(env);
 #ifdef TARGET_CHERI
     // qemu_log_mask(CPU_LOG_INSTR, "%s: PCC <- EPCC\n", __func__);
-    if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
+    if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR)) && !trace_stats_only) {
          // Print the new PCC value for debugging traces (compare to null
          // so that we always print it)
          cap_register_t null_cap;
@@ -6408,7 +6468,7 @@ void dump_changed_capreg(CPUMIPSState *env, cap_register_t *cr,
             cvtrace_dump_cap_perms(&env->cvtrace, cr);
             cvtrace_dump_cap_cbl(&env->cvtrace, cr);
         }
-        if (qemu_loglevel_mask(CPU_LOG_INSTR)) {
+        if (qemu_loglevel_mask(CPU_LOG_INSTR) && !trace_stats_only) {
             // TODO: allow printing a string instead of C%d
             fprintf(qemu_logfile,
                     "    Write %s|v:%d s:%d p:%08x b:%016" PRIx64
@@ -6442,7 +6502,7 @@ static void dump_changed_regs(CPUMIPSState *env)
         if (cur->gpr[i] != env->last_gpr[i]) {
             env->last_gpr[i] = cur->gpr[i];
             cvtrace_dump_gpr(&env->cvtrace, cur->gpr[i]);
-            if (qemu_loglevel_mask(CPU_LOG_INSTR)) {
+            if (qemu_loglevel_mask(CPU_LOG_INSTR) && !trace_stats_only) {
                 fprintf(qemu_logfile, "    Write %s = " TARGET_FMT_lx "\n",
                         gpr_name[i], cur->gpr[i]);
             }
@@ -6620,8 +6680,11 @@ static inline void dump_store(CPUMIPSState *env, int opc, target_ulong addr,
     case OPC_CSD:
     case OPC_CSTOREC:
     case OPC_CSCD:
-        fprintf(qemu_logfile, "    Memory Write [" TARGET_FMT_lx "] = "
-                TARGET_FMT_lx"\n", addr, value);
+        if (trace_stats_only)
+            ++trace_stores;
+        else
+            fprintf(qemu_logfile, "    Memory Write [" TARGET_FMT_lx "] = "
+                    TARGET_FMT_lx"\n", addr, value);
         break;
 #endif
     case OPC_SC:
@@ -6634,26 +6697,38 @@ static inline void dump_store(CPUMIPSState *env, int opc, target_ulong addr,
 
     case OPC_CSW:
     case OPC_CSCW:
-        fprintf(qemu_logfile, "    Memory Write [" TARGET_FMT_lx "] = %08x\n",
-                addr, (uint32_t) value);
+        if (trace_stats_only)
+            ++trace_stores;
+        else
+            fprintf(qemu_logfile, "    Memory Write [" TARGET_FMT_lx "] = %08x\n",
+                    addr, (uint32_t) value);
         break;
     case OPC_SH:
 
     case OPC_CSH:
     case OPC_CSCH:
-        fprintf(qemu_logfile, "    Memory Write [" TARGET_FMT_lx "] = %04x\n",
-                addr, (uint16_t) value);
+        if (trace_stats_only)
+            ++trace_stores;
+        else
+            fprintf(qemu_logfile, "    Memory Write [" TARGET_FMT_lx "] = %04x\n",
+                    addr, (uint16_t) value);
         break;
     case OPC_SB:
 
     case OPC_CSB:
     case OPC_CSCB:
-        fprintf(qemu_logfile, "    Memory Write [" TARGET_FMT_lx "] = %02x\n",
-                addr, (uint8_t) value);
+        if (trace_stats_only)
+            ++trace_stores;
+        else
+            fprintf(qemu_logfile, "    Memory Write [" TARGET_FMT_lx "] = %02x\n",
+                    addr, (uint8_t) value);
         break;
     default:
-        fprintf(qemu_logfile, "    Memory op%u [" TARGET_FMT_lx "] = %08x\n",
-                opc, addr, (uint32_t) value);
+        if (trace_stats_only)
+            ++trace_stores;
+        else
+            fprintf(qemu_logfile, "    Memory op%u [" TARGET_FMT_lx "] = %08x\n",
+                    opc, addr, (uint32_t) value);
     }
 }
 
@@ -6692,8 +6767,11 @@ void helper_dump_load(CPUMIPSState *env, int opc, target_ulong addr,
     case OPC_CLD:
     case OPC_CLOADC:
     case OPC_CLLD:
-        fprintf(qemu_logfile, "    Memory Read [" TARGET_FMT_lx "] = "
-                TARGET_FMT_lx "\n", addr, value);
+        if (trace_stats_only)
+            ++trace_loads;
+        else
+            fprintf(qemu_logfile, "    Memory Read [" TARGET_FMT_lx "] = "
+                    TARGET_FMT_lx "\n", addr, value);
         break;
     case OPC_LWU:
 #endif
@@ -6710,8 +6788,11 @@ void helper_dump_load(CPUMIPSState *env, int opc, target_ulong addr,
     case OPC_CLWU:
     case OPC_CLLW:
     case OPC_CLLWU:
-        fprintf(qemu_logfile, "    Memory Read [" TARGET_FMT_lx "] = %08x\n",
-                addr, (uint32_t) value);
+        if (trace_stats_only)
+            ++trace_loads;
+        else
+            fprintf(qemu_logfile, "    Memory Read [" TARGET_FMT_lx "] = %08x\n",
+                    addr, (uint32_t) value);
         break;
     case OPC_LH:
     case OPC_LHU:
@@ -6720,8 +6801,11 @@ void helper_dump_load(CPUMIPSState *env, int opc, target_ulong addr,
     case OPC_CLHU:
     case OPC_CLLH:
     case OPC_CLLHU:
-        fprintf(qemu_logfile, "    Memory Read [" TARGET_FMT_lx "] = %04x\n",
-                addr, (uint16_t) value);
+        if (trace_stats_only)
+            ++trace_loads;
+        else
+            fprintf(qemu_logfile, "    Memory Read [" TARGET_FMT_lx "] = %04x\n",
+                    addr, (uint16_t) value);
         break;
     case OPC_LB:
     case OPC_LBU:
@@ -6730,8 +6814,11 @@ void helper_dump_load(CPUMIPSState *env, int opc, target_ulong addr,
     case OPC_CLBU:
     case OPC_CLLB:
     case OPC_CLLBU:
-        fprintf(qemu_logfile, "    Memory Read [" TARGET_FMT_lx "] = %02x\n",
-                addr, (uint8_t) value);
+        if (trace_stats_only)
+            ++trace_loads;
+        else
+            fprintf(qemu_logfile, "    Memory Read [" TARGET_FMT_lx "] = %02x\n",
+                    addr, (uint8_t) value);
         break;
     }
 }

@@ -26,6 +26,13 @@
 #include "qemu/error-report.h"
 #include "hw/mips/cpudevs.h"
 
+extern bool trace_stats_only;
+extern uint64_t trace_context_switches;
+extern uint64_t trace_tlb_misses;
+extern uint64_t trace_loads;
+extern uint64_t trace_stores;
+extern uint64_t trace_instructions;
+
 enum {
 #ifdef TARGET_CHERI
     TLBRET_S = -5,
@@ -785,9 +792,10 @@ void mips_cpu_do_interrupt(CPUState *cs)
             name = excp_names[cs->exception_index];
         }
 
-        qemu_log("%s enter: PC " TARGET_FMT_lx " EPC " TARGET_FMT_lx
-                 " %s exception\n",
-                 __func__, env->active_tc.PC, env->CP0_EPC, name);
+        if (!trace_stats_only)
+            qemu_log("%s enter: PC " TARGET_FMT_lx " EPC " TARGET_FMT_lx
+                     " %s exception\n",
+                     __func__, env->active_tc.PC, env->CP0_EPC, name);
     }
 #ifdef TARGET_CHERI
     if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR | CPU_LOG_CVTRACE)
@@ -915,6 +923,8 @@ void mips_cpu_do_interrupt(CPUState *cs)
         update_badinstr = !(env->error_code & EXCP_INST_NOTAVAIL);
         goto set_EPC;
     case EXCP_TLBL:
+        if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR) && trace_stats_only))
+            ++trace_tlb_misses;
         cause = 2;
         update_badinstr = !(env->error_code & EXCP_INST_NOTAVAIL);
         if ((env->error_code & EXCP_TLB_NOMATCH) &&
@@ -1116,7 +1126,7 @@ void mips_cpu_do_interrupt(CPUState *cs)
         abort();
     }
 #ifdef TARGET_CHERI
-    if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR))) {
+    if (unlikely(qemu_loglevel_mask(CPU_LOG_INSTR) && !trace_stats_only)) {
         if (cs->exception_index == EXCP_EXT_INTERRUPT)
             fprintf (qemu_logfile, "--- Interrupt, vector " TARGET_FMT_lx "\n",
                     env->active_tc.PC);

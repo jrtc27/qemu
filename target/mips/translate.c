@@ -5039,6 +5039,15 @@ static void gen_logic_imm(DisasContext *ctx, uint32_t opc,
             if ((uint16_t)imm == 0xface)
                 GEN_CHERI_TRACE_HELPER(cpu_env, cheri_debug_message);
 
+            if ((uint16_t)imm == 0xfeed)
+                GEN_CHERI_TRACE_HELPER(cpu_env, stats_start);
+
+            if ((uint16_t)imm == 0xdeef)
+                GEN_CHERI_TRACE_HELPER(cpu_env, stats_stop);
+
+            if ((uint16_t)imm == 0xf00d)
+                GEN_CHERI_TRACE_HELPER(cpu_env, stats_context_switch);
+
             if ((uint16_t)imm == 0xc0fe) {
                 CPUState *other_cs = first_cpu;
                 enable_sleep = false;
